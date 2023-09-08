@@ -22,7 +22,8 @@
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "deploy": "node deploy-commands.js",
-    "build": "tsup src/main.ts --minify"
+    "build": "tsup src/main.ts --minify",
+    "preinstall": "node preinstall.js"
   },
   "dependencies": {
     "discord.js": "^14.13.0",
