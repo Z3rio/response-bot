@@ -28,10 +28,13 @@ const replies: Record<string, string> = {};
           interaction: Interaction,
           db: Database<sqlite3.Database, sqlite3.Statement>,
           functions: Record<string, Function>,
+          replies: Record<string, string>,
         ) => void;
         autocomplete: (
           interaction: Interaction,
           db: Database<sqlite3.Database, sqlite3.Statement>,
+          functions: Record<string, Function>,
+          replies: Record<string, string>,
         ) => void;
       }
     >;
@@ -99,6 +102,9 @@ const replies: Record<string, string> = {};
     insertReply: (message: string, reply: string) => {
       replies[message] = reply;
     },
+    removeReply: (message: string) => {
+      delete replies[message];
+    },
   };
 
   // main
@@ -142,9 +148,9 @@ const replies: Record<string, string> = {};
 
           try {
             if (interaction.isChatInputCommand()) {
-              command.execute(interaction, db, Functions);
+              command.execute(interaction, db, Functions, replies);
             } else if (interaction.isAutocomplete()) {
-              await command.autocomplete(interaction, db);
+              await command.autocomplete(interaction, db, Functions, replies);
             }
           } catch (error) {
             if ("reply" in interaction) {

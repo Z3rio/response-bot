@@ -28,8 +28,8 @@ module.exports = {
     if (alreadyExists["count(1)"] == 0) {
       const resp = await db.run(
         `
-        insert into replies (message, reply) values (?, ?)
-      `,
+          insert into replies (message, reply) values (?, ?)
+        `,
         text,
         reply,
       );
