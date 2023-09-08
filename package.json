@@ -21,6 +21,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
+    "deploy": "node deploy-commands.js",
     "build": "tsup src/main.ts --minify"
   },
   "dependencies": {

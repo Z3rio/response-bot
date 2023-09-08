@@ -1,15 +1,39 @@
 // imports
-import { Client, GatewayIntentBits, Message } from "discord.js";
+import {
+  Client,
+  Collection,
+  Events,
+  GatewayIntentBits,
+  Interaction,
+  Message,
+  SlashCommandBuilder,
+} from "discord.js";
 import { config as dotenvSetup } from "dotenv";
 import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+import { Database, open } from "sqlite";
+import fs from "node:fs";
+import path from "node:path";
 
 // data
 const replies: Record<string, string> = {};
 
 (async () => {
   // setup
-  const client = new Client({
+  interface clientType extends Client {
+    commands?: Collection<
+      string,
+      {
+        data: SlashCommandBuilder;
+        execute: (
+          interaction: Interaction,
+          db: Database<sqlite3.Database, sqlite3.Statement>,
+          functions: Record<string, Function>,
+        ) => void;
+      }
+    >;
+  }
+
+  const client: clientType = new Client({
     intents: [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
@@ -19,12 +43,31 @@ const replies: Record<string, string> = {};
       GatewayIntentBits.MessageContent,
     ],
   });
+  client.commands = new Collection();
+
   const dotenvResult = dotenvSetup();
 
   const db = await open({
     filename: "data.db",
     driver: sqlite3.Database,
   });
+
+  const commandsPath = path.join(__dirname, "../commands");
+  const commandFiles = fs
+    .readdirSync(commandsPath)
+    .filter((file) => file.endsWith(".js"));
+
+  for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const command = require(filePath);
+    if ("data" in command && "execute" in command) {
+      client.commands.set(command.data.name, command);
+    } else {
+      console.log(
+        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+      );
+    }
+  }
 
   // db handling
   sqlite3.verbose();
@@ -47,18 +90,25 @@ const replies: Record<string, string> = {};
     replies[data.message] = data.reply;
   }
 
+  // functions
+  const Functions: Record<string, Function> = {
+    insertReply: (message: string, reply: string) => {
+      replies[message] = reply;
+    },
+  };
+
   // main
   if (dotenvResult.error) {
     console.log("dotenv error", dotenvResult.error);
   } else {
     if (process.env.TOKEN) {
-      client.on("ready", () => {
+      client.on(Events.ClientReady, () => {
         if (client.user) {
           console.log(`[SUCCESS] Logged in as ${client.user.tag}!`);
         }
       });
 
-      client.on("messageCreate", async (message: Message<boolean>) => {
+      client.on(Events.MessageCreate, async (message: Message<boolean>) => {
         if (message.author.bot == false) {
           let found: undefined | string = undefined;
 
@@ -70,6 +120,34 @@ const replies: Record<string, string> = {};
 
           if (found) {
             message.reply(found);
+          }
+        }
+      });
+
+      client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+        const client = interaction.client as clientType;
+        if (client.commands && "commandName" in interaction) {
+          const command = client.commands.get(interaction.commandName);
+
+          if (!command) {
+            console.error(
+              `No command matching ${interaction.commandName} was found.`,
+            );
+            return;
+          }
+
+          try {
+            if (interaction.isChatInputCommand()) {
+              command.execute(interaction, db, Functions);
+            }
+          } catch (error) {
+            if ("reply" in interaction) {
+              console.error("command error", error);
+              interaction.reply({
+                content: "There was an error while executing this command!",
+                ephemeral: true,
+              });
+            }
           }
         }
       });
