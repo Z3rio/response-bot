@@ -1,0 +1,35 @@
+{
+  "name": "response-bot",
+  "description": "Just a Discord bot created for my friend",
+  "version": "1.0.0",
+  "author": "Zerio",
+  "license": "MIT",
+  "main": "index.js",
+  "bugs": {
+    "url": "https://github.com/Z3rio/response-bot/issues"
+  },
+  "homepage": "https://github.com/Z3rio/response-bot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Z3rio/response-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "ts",
+    "js"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsup src/main.ts --minify"
+  },
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5",
+    "tsup": "^7.2.0",
+    "tsx": "^3.12.8"
+  }
+}

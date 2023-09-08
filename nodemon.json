@@ -1,0 +1,4 @@
+{
+  "watch": ["main.js"],
+  "exec": "npm run start"
+}
